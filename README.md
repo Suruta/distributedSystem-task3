@@ -1,15 +1,85 @@
-# Distributed KV Store: Consistency Models & CAP (Lab 6-7)
+# Distributed KV Store: Consistency Models & CAP
 
-Extends the Lab 2 replicated gRPC counter (kept untouched in `lab2_counter/`).
+## How to test it
 
-| File | Purpose |
-|---|---|
-| `kvstore.proto` | Task 1: `Get`/`Put` + enums exactly as in the handout; extra `NodeControl` service for replication, heartbeats and partition injection |
-| `server.py` | Task 2: replica with leaseholder, linearizable + follower-stale reads, CP/AP writes, LWW, anti-entropy |
-| `client.py` | Client + CLI, typed errors, `write_to` / `read_from` helpers for R/W experiments |
-| `tests/test_cap.py` | Task 3: failure-injection wrapper + 29 pytest cases (16 test functions) |
-| `perf_cap_bench.py` | Task 4: PACELC benchmark (1,000 iterations per scenario) |
-| `make_report.py` → `Lab_Report_CAP.pdf` | Lab report built from measured results |
+### Part A
+
+Option 1: automated:
+```cmd
+python -m pytest -v -k "cp_write_on"
+```
+
+Option 2: manual
+
+Step 1: run these commands per terminal:
+```cmd
+python server.py --name A --port 50052 --peers B=localhost:50053,C=localhost:50054 --sync-interval 0
+python server.py --name B --port 50053 --peers A=localhost:50052,C=localhost:50054 --sync-interval 0
+python server.py --name C --port 50054 --peers A=localhost:50052,B=localhost:50053 --sync-interval 0
+```
+
+Step 2: Create the partition DC-1 = {A, B} and DC-2 = {C}:  
+```cmd
+python -c "import sys; sys.path.insert(0,'tests'); from test_cap import PartitionInjector; PartitionInjector({'A':'127.0.0.1:50052','B':'127.0.0.1:50053','C':'127.0.0.1:50054'}).partition(['A','B'],['C'])"
+```
+
+Step 3: Put to DC-1 (majority)
+```cmd
+python client.py --target localhost:50052 put user:1 alice --strategy cp
+```
+
+Step 4: Put to DC-2 (minority)
+```cmd
+python client.py --target localhost:50054 put user:2 bob --strategy cp
+```
+
+Step 5: health the partition (optional)
+```cmd
+python -c "import sys; sys.path.insert(0,'tests'); from test_cap import PartitionInjector; PartitionInjector({'A':'127.0.0.1:50052','B':'127.0.0.1:50053','C':'127.0.0.1:50054'}).heal()"
+```
+
+### Part B
+
+Option 1: automated:
+```cmd
+python -m pytest -v -k "ap_write or lww or anti_entropy"
+```
+
+Option 2: manual:
+
+Step 1: do the same as Part A's 1-2 steps  
+If you healed the partition at the end of Part A, create it again:
+```cmd
+python -c "import sys; sys.path.insert(0,'tests'); from test_cap import PartitionInjector; PartitionInjector({'A':'127.0.0.1:50052','B':'127.0.0.1:50053','C':'127.0.0.1:50054'}).partition(['A','B'],['C'])"
+```
+
+Step 2: AP write to DC-2 (minority):
+```cmd
+python client.py --target localhost:50054 put x v2-from-dc2 --strategy ap --timestamp 200
+```
+
+To create a divergent value, also write the same key on the majority side with an older timestamp:
+```cmd
+python client.py --target localhost:50052 put x v1-from-dc1 --strategy cp --timestamp 100
+```
+
+Step 3: Check the divergence before healing (each node’s local copy):
+```cmd
+python client.py --target localhost:50052 get x --consistency stale
+python client.py --target localhost:50054 get x --consistency stale
+```
+
+Step 4: reconnect DC-2 to DC-1:
+```cmd
+python -c "import sys; sys.path.insert(0,'tests'); from test_cap import PartitionInjector; PartitionInjector({'A':'127.0.0.1:50052','B':'127.0.0.1:50053','C':'127.0.0.1:50054'}).heal()"
+```
+
+Step 5: Read after recovery:
+```cmd
+python client.py --target localhost:50052 get x --consistency linearizable
+python client.py --target localhost:50053 get x --consistency stale
+python client.py --target localhost:50054 get x --consistency stale
+```
 
 ## Setup
 ```

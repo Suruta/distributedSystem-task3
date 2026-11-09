@@ -42,9 +42,9 @@ import kvstore_pb2 as pb
 import kvstore_pb2_grpc as pbg
 
 DEFAULT_CLUSTER = {
-    "A": "localhost:50051",
-    "B": "localhost:50052",
-    "C": "localhost:50053",
+    "A": "localhost:50052",
+    "B": "localhost:50053",
+    "C": "localhost:50054",
 }
 DEFAULT_LEASEHOLDER = "A"
 # Each channel gets its own subchannel pool. With the default global pool, nodes
