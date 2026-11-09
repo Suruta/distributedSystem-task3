@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package counter;
+
+service Counter {
+  rpc Increment (IncrementRequest) returns (IncrementReply);
+  rpc Get (GetRequest) returns (GetReply);
+}
+
+message IncrementRequest {
+  string counter_id = 1;
+  int64 delta = 2;
+  string idempotency_key = 3;  // client-generated, unique per logical operation
+  uint64 lamport_time = 4;     // sender's Lamport clock at send
+}
+
+message IncrementReply {
+  int64 new_value = 1;
+  bool was_duplicate = 2;
+  uint64 lamport_time = 4;     // sender's Lamport clock at send (field 3 left unused to match the spec's "= 4")
+}
+
+message GetRequest {
+  string counter_id = 1;
+  uint64 lamport_time = 2;
+}
+
+message GetReply {
+  int64 value = 1;
+  bool found = 2;
+  uint64 lamport_time = 3;
+}

@@ -1,0 +1,59 @@
+{
+  "iterations": 1000,
+  "rtt_ms": 0.0,
+  "max_staleness_ms": 5000,
+  "healthy": [
+    {
+      "mode": "Linearizable",
+      "target": "Leaseholder A (remote)",
+      "iterations": 1000,
+      "ok": 1000,
+      "failed": 0,
+      "median_ms": 0.3496580000614813,
+      "p95_ms": 0.5972740000288468,
+      "availability_pct": 100.0
+    },
+    {
+      "mode": "Follower Stale",
+      "target": "Local follower B",
+      "iterations": 1000,
+      "ok": 1000,
+      "failed": 0,
+      "median_ms": 0.3620150000074318,
+      "p95_ms": 0.5752189999839175,
+      "availability_pct": 100.0
+    }
+  ],
+  "fault": [
+    {
+      "mode": "Linearizable",
+      "target": "Leaseholder A (isolated)",
+      "iterations": 1000,
+      "ok": 0,
+      "failed": 1000,
+      "median_ms": null,
+      "p95_ms": null,
+      "availability_pct": 0.0
+    },
+    {
+      "mode": "Follower Stale (within 5 s bound)",
+      "target": "Local follower B",
+      "iterations": 1000,
+      "ok": 1000,
+      "failed": 0,
+      "median_ms": 0.3421685000262187,
+      "p95_ms": 0.44726400005856704,
+      "availability_pct": 100.0
+    },
+    {
+      "mode": "Follower Stale (bound expired)",
+      "target": "Local follower B",
+      "iterations": 1000,
+      "ok": 0,
+      "failed": 1000,
+      "median_ms": null,
+      "p95_ms": null,
+      "availability_pct": 0.0
+    }
+  ]
+}
